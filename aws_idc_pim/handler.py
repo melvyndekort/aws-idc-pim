@@ -114,10 +114,10 @@ def _process_command(event) -> None:
     target_name = options["target"]
 
     try:
-        if command == "elevate":
+        if command == "aws-elevate":
             duration = int(options.get("duration", DEFAULT_DURATION_MINUTES))
             result = elevation.elevate(email, target_name, duration)
-        elif command == "revoke":
+        elif command == "aws-revoke":
             result = elevation.revoke(email, target_name)
         else:
             result = f"Unknown command: {command}"

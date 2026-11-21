@@ -9,9 +9,9 @@ Python developer and AWS engineer.
 ## What This Does
 
 Discord-driven just-in-time (JIT) elevation for IAM Identity Center's `AdministratorAccess`
-permission set. No standing admin assignment: `/elevate target:<account> duration:<minutes>`
+permission set. No standing admin assignment: `/aws-elevate target:<account> duration:<minutes>`
 grants it temporarily (default 15 min), auto-revoked via a one-time EventBridge Scheduler
-rule; `/revoke target:<account>` ends it early. See
+rule; `/aws-revoke target:<account>` ends it early. See
 `Tech/Homelab/planning/aws-idc-pim-2026-11-20.md` in the Obsidian vault for the full design
 rationale (why not AWS's own TEAM solution, why a Lambda Function URL instead of API
 Gateway, why delegated administration + one narrow management-account role instead of

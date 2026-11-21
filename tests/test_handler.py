@@ -53,7 +53,7 @@ def test_rejects_non_allowlisted_discord_user():
     interaction = {
         "type": handler.APPLICATION_COMMAND,
         "member": {"user": {"id": "999999999"}},
-        "data": {"name": "elevate", "options": []},
+        "data": {"name": "aws-elevate", "options": []},
     }
     with patch("aws_idc_pim.handler.DISCORD_PUBLIC_KEY", public_key_hex):
         event = _signed_request(signing_key, interaction)
@@ -71,7 +71,7 @@ def test_allowlisted_user_gets_deferred_ack_and_self_invoke(mock_boto3):
         "type": handler.APPLICATION_COMMAND,
         "member": {"user": {"id": allowed_id}},
         "data": {
-            "name": "elevate",
+            "name": "aws-elevate",
             "options": [{"name": "target", "value": "hermes-agent"}],
         },
     }
@@ -106,7 +106,7 @@ def test_process_command_calls_elevate_and_posts_followup(
             "member": {"user": {"id": allowed_id}},
             "token": "interaction-token",
             "data": {
-                "name": "elevate",
+                "name": "aws-elevate",
                 "options": [
                     {"name": "target", "value": "hermes-agent"},
                     {"name": "duration", "value": 30},
