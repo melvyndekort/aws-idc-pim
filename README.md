@@ -2,9 +2,9 @@
 
 Discord-driven just-in-time elevation for IAM Identity Center permission sets.
 
-No standing `AdministratorAccess` assignment. `/elevate target:<account> duration:<minutes>`
+No standing `AdministratorAccess` assignment. `/aws-elevate target:<account> duration:<minutes>`
 grants it temporarily (default 15 minutes) and schedules an automatic revoke;
-`/revoke target:<account>` ends it early. See `CLAUDE.md` for the architecture and
+`/aws-revoke target:<account>` ends it early. See `CLAUDE.md` for the architecture and
 `Tech/Homelab/planning/aws-idc-pim-2026-11-20.md` (Obsidian vault) for the full design
 rationale.
 
@@ -20,7 +20,7 @@ rationale.
    `make encrypt`, commit the resulting `terraform/secrets.yaml.encrypted`, `make apply` again.
 5. Set `allowed_discord_users` in `terraform/terraform.tfvars` to your real Discord user ID,
    `make apply`.
-6. Register the `/elevate` and `/revoke` slash commands with Discord (not yet automated here).
+6. Register the `/aws-elevate` and `/aws-revoke` slash commands with Discord (not yet automated here).
 
 ## Usage
 
