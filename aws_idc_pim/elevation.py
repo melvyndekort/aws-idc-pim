@@ -205,15 +205,27 @@ def _wait_for_status(
     """create/delete-account-assignment are async; poll briefly so the
     Discord followup can report a real outcome instead of 'submitted'."""
     describe = getattr(sso_admin, describe_method)
+    is_creation = "creation" in describe_method
     status_key = (
         "AccountAssignmentCreationStatus"
-        if "creation" in describe_method
+        if is_creation
         else "AccountAssignmentDeletionStatus"
     )
+    # Despite both being called "RequestId" in create/delete's response
+    # (AccountAssignmentCreationStatus.RequestId /
+    # AccountAssignmentDeletionStatus.RequestId), the describe_* calls'
+    # *input* parameter is spelled out in full and differs per operation --
+    # confirmed live via ParamValidationError. No shared "RequestId" input
+    # parameter exists on either describe call.
+    request_id_param = (
+        "AccountAssignmentCreationRequestId"
+        if is_creation
+        else "AccountAssignmentDeletionRequestId"
+    )
     for _ in range(10):
-        status = describe(InstanceArn=instance_arn, RequestId=request_id)[status_key][
-            "Status"
-        ]
+        status = describe(InstanceArn=instance_arn, **{request_id_param: request_id})[
+            status_key
+        ]["Status"]
         if status == "SUCCEEDED":
             return
         if status == "FAILED":
