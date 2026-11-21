@@ -42,7 +42,8 @@ lint:
 	@uv run pylint aws_idc_pim tests
 
 package:
-	@cd aws_idc_pim && zip -r ../lambda.zip . -x "__pycache__/*"
+	@rm -f lambda.zip
+	@zip -r lambda.zip aws_idc_pim -x "aws_idc_pim/__pycache__/*"
 	@uv pip install --target build_deps pynacl urllib3 >/dev/null
 	@cd build_deps && zip -r ../lambda.zip . -x "*.dist-info/*"
 	@rm -rf build_deps

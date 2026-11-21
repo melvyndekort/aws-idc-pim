@@ -30,8 +30,7 @@ jobs:
         run: uv sync --all-extras
       - name: Build artifact
         run: |
-          cd aws_idc_pim && zip -r ../lambda.zip . -x "__pycache__/*"
-          cd ..
+          zip -r lambda.zip aws_idc_pim -x "aws_idc_pim/__pycache__/*"
           uv pip install --target build_deps pynacl urllib3
           cd build_deps && zip -r ../lambda.zip . -x "*.dist-info/*"
       - name: Archive lambda artifact
