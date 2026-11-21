@@ -90,7 +90,7 @@ def _permission_set_paginator(mock_sso_admin):
     ]
     mock_sso_admin.get_paginator.return_value = mock_paginator
     mock_sso_admin.describe_permission_set.return_value = {
-        "PermissionSet": {"Name": "AdministratorAccess"}
+        "PermissionSet": {"Name": "AdministratorAccessJIT"}
     }
 
 

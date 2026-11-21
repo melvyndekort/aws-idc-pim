@@ -1,13 +1,22 @@
 """IAM Identity Center JIT elevation: account assignments + auto-revoke.
 
 Core AWS operations for the /elevate and /revoke commands. Deliberately
-resolves the Identity Center instance ARN, the AdministratorAccess
+resolves the Identity Center instance ARN, the AdministratorAccessJIT
 permission set ARN, and the requester's identitystore principal ID live on
 every call rather than caching them in Terraform outputs or env vars --
 these are cheap, infrequent calls, and resolving live means none of this
 breaks if the permission set is ever recreated or the identity store user
 is re-provisioned by Authentik's SCIM sync (see
 Tech/Homelab/planning/aws-idc-pim-2026-11-20.md).
+
+Uses a dedicated "AdministratorAccessJIT" permission set, never the
+standing "AdministratorAccess" one the aws-users group has everyday access
+through. Confirmed live: IAM Identity Center refuses to let a delegated
+administrator manage ANY assignment for a permission set that has a
+standing assignment to the management account, in ANY account -- not just
+the management account itself. The standing permission set is tainted by
+that management-account assignment; this bot's own permission set never
+has one, so it's always manageable via delegated administration.
 """
 
 import json
@@ -21,7 +30,7 @@ import boto3
 logger = logging.getLogger()
 logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
 
-PERMISSION_SET_NAME = "AdministratorAccess"
+PERMISSION_SET_NAME = "AdministratorAccessJIT"
 
 MANAGEMENT_ACCOUNT_ID = os.environ["MANAGEMENT_ACCOUNT_ID"]
 ROOT_ELEVATION_ROLE_ARN = os.environ["ROOT_ELEVATION_ROLE_ARN"]
