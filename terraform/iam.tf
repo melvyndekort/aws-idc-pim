@@ -29,6 +29,18 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 # management/identity_center.tf), but delegated admin status alone doesn't
 # grant API permissions -- it only lifts the "must be the management
 # account" restriction. The identity policy below is still required.
+data "aws_ssoadmin_instances" "this" {}
+
+locals {
+  sso_instance_arn = tolist(data.aws_ssoadmin_instances.this.arns)[0]
+  # Account IDs this Lambda is allowed to manage assignments for directly
+  # (via delegated admin). The management account is deliberately excluded
+  # here -- delegated admin can never manage assignments to it regardless
+  # of IAM policy (AWS hard restriction), that path goes through the
+  # separate root_elevation_role instead.
+  workload_account_ids = [for name, id in var.target_accounts : id if name != "management"]
+}
+
 data "aws_iam_policy_document" "lambda_permissions" {
   statement {
     sid    = "ManageWorkloadAccountAssignments"
@@ -45,10 +57,28 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "sso:DescribeAccountAssignmentCreationStatus",
       "sso:DescribeAccountAssignmentDeletionStatus",
       "sso:ListAccountAssignments",
-      "sso:ListInstances",
       "sso:ListPermissionSets",
       "sso:DescribePermissionSet",
     ]
+    # IAM Identity Center's sso-admin API is a known exception to normal
+    # IAM wildcard behavior: for multi-resource actions like
+    # CreateAccountAssignment, a bare Resource "*" is NOT sufficient --
+    # confirmed live (AccessDeniedException persisted even with Resource
+    # "*" granting the action). AWS's own example policies (see "Delegating
+    # permission set management and account assignment in AWS IAM Identity
+    # Center" security blog) always list the Instance, PermissionSet, and
+    # Account resource types explicitly, never as "*". Must do the same.
+    resources = concat(
+      [local.sso_instance_arn],
+      ["${replace(local.sso_instance_arn, "instance/", "permissionSet/")}/*"],
+      [for id in local.workload_account_ids : "arn:aws:sso:::account/${id}"],
+    )
+  }
+
+  statement {
+    sid       = "ListInstances"
+    effect    = "Allow"
+    actions   = ["sso:ListInstances"]
     resources = ["*"]
   }
 
