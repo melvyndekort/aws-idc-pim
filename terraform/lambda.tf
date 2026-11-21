@@ -27,11 +27,17 @@ resource "aws_lambda_function" "aws_idc_pim" {
 
   environment {
     variables = {
-      LOG_LEVEL                   = var.log_level
-      MANAGEMENT_ACCOUNT_ID       = var.management_account_id
-      ROOT_ELEVATION_ROLE_ARN     = var.root_elevation_role_arn
-      SCHEDULER_ROLE_ARN          = aws_iam_role.scheduler_invoke.arn
-      SCHEDULER_TARGET_LAMBDA_ARN = aws_lambda_function.aws_idc_pim.arn
+      LOG_LEVEL               = var.log_level
+      MANAGEMENT_ACCOUNT_ID   = var.management_account_id
+      ROOT_ELEVATION_ROLE_ARN = var.root_elevation_role_arn
+      SCHEDULER_ROLE_ARN      = aws_iam_role.scheduler_invoke.arn
+      # Deliberately a literal string, not aws_lambda_function.aws_idc_pim.arn
+      # -- Terraform forbids a resource referencing its own computed attribute
+      # from within its own config ("Self-referential block", confirmed live
+      # on this PR's first real plan). The ARN is fully deterministic from
+      # account id + region + the function_name set two lines above, so the
+      # literal is exact, not a guess.
+      SCHEDULER_TARGET_LAMBDA_ARN = "arn:aws:lambda:eu-west-1:397379012163:function:aws-idc-pim"
       TARGET_ACCOUNTS             = jsonencode(var.target_accounts)
       ALLOWED_DISCORD_USERS       = jsonencode(var.allowed_discord_users)
       DEFAULT_DURATION_MINUTES    = tostring(var.default_duration_minutes)
