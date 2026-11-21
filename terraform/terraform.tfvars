@@ -9,6 +9,8 @@ target_accounts = {
   network-monitor = "844347863910"
 }
 
-# Empty on purpose -- see variables.tf. Fill in once the Discord
-# Application exists and Melvyn provides his Discord user ID.
-allowed_discord_users = {}
+# Melvyn's Discord user ID (from the #aws Discord thread) -> his IAM
+# Identity Center username, confirmed live via identitystore:ListUsers.
+allowed_discord_users = {
+  "1164876958895718420" = "melvyn@mdekort.nl"
+}
