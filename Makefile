@@ -44,7 +44,7 @@ lint:
 package:
 	@rm -f lambda.zip
 	@zip -r lambda.zip aws_idc_pim -x "aws_idc_pim/__pycache__/*"
-	@uv pip install --target build_deps pynacl urllib3 >/dev/null
+	@uv pip install --target build_deps --python 3.12 pynacl urllib3 >/dev/null
 	@cd build_deps && zip -r ../lambda.zip . -x "*.dist-info/*"
 	@rm -rf build_deps
 
