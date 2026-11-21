@@ -1,0 +1,31 @@
+[project]
+name = "aws-idc-pim"
+version = "0.1.0"
+description = "Discord-driven just-in-time elevation for IAM Identity Center permission sets"
+authors = [{name = "Melvyn de Kort", email = "melvyn@mdekort.nl"}]
+requires-python = ">=3.12"
+dependencies = [
+    "pynacl>=1.6.0",
+    "urllib3>=2.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "boto3>=1.42.88",
+    "moto>=5.1.22",
+    "pylint>=3.3.0",
+    "ruff>=0.16.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["aws_idc_pim"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

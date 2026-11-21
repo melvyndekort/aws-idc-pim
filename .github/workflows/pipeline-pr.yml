@@ -1,0 +1,44 @@
+name: "Pipeline PR"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write      # Codecov OIDC (use_oidc), not AWS
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "latest"
+      - name: Set up Python
+        run: uv python install
+      - name: Install dependencies
+        run: uv sync --all-extras
+      - name: Run tests
+        run: uv run pytest --cov=./ --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          fail_ci_if_error: true
+          files: coverage.xml
+          use_oidc: true
+          verbose: true
+      - name: Build artifact
+        run: |
+          cd aws_idc_pim && zip -r ../lambda.zip . -x "__pycache__/*"
+          cd ..
+          uv pip install --target build_deps pynacl urllib3
+          cd build_deps && zip -r ../lambda.zip . -x "*.dist-info/*"
+      - name: Archive lambda artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: lambda
+          path: lambda.zip
+          if-no-files-found: error

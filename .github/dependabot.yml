@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "auto"
+    groups:
+      github-actions-root:
+        patterns:
+          - "*"
+    assignees:
+      - "melvyndekort"
+    reviewers:
+      - "melvyndekort"
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "auto"
+    groups:
+      uv-root:
+        patterns:
+          - "*"
+    assignees:
+      - "melvyndekort"
+    reviewers:
+      - "melvyndekort"
+
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    schedule:
+      interval: "weekly"
+    rebase-strategy: "auto"
+    groups:
+      terraform-terraform:
+        patterns:
+          - "*"
+    assignees:
+      - "melvyndekort"
+    reviewers:
+      - "melvyndekort"
