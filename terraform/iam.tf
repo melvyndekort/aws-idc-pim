@@ -32,12 +32,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 data "aws_ssoadmin_instances" "this" {}
 
 locals {
-  sso_instance_arn = tolist(data.aws_ssoadmin_instances.this.arns)[0]
-  # Account IDs this Lambda is allowed to manage assignments for directly
-  # (via delegated admin). The management account is deliberately excluded
-  # here -- delegated admin can never manage assignments to it regardless
-  # of IAM policy (AWS hard restriction), that path goes through the
-  # separate root_elevation_role instead.
+  sso_instance_arn     = tolist(data.aws_ssoadmin_instances.this.arns)[0]
   workload_account_ids = [for name, id in var.target_accounts : id if name != "management"]
 }
 
@@ -45,12 +40,6 @@ data "aws_iam_policy_document" "lambda_permissions" {
   statement {
     sid    = "ManageWorkloadAccountAssignments"
     effect = "Allow"
-    # Despite being called via the boto3 "sso-admin" client, every one of
-    # these operations is authorized under the "sso:" IAM action prefix,
-    # not "sso-admin:" -- confirmed live (AccessDeniedException naming
-    # "sso:ListInstances" explicitly) and in AWS's Service Authorization
-    # Reference for "AWS IAM Identity Center" (prefix sso). There is no
-    # separate "sso-admin" IAM action namespace for these operations.
     actions = [
       "sso:CreateAccountAssignment",
       "sso:DeleteAccountAssignment",
@@ -60,14 +49,6 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "sso:ListPermissionSets",
       "sso:DescribePermissionSet",
     ]
-    # IAM Identity Center's sso-admin API is a known exception to normal
-    # IAM wildcard behavior: for multi-resource actions like
-    # CreateAccountAssignment, a bare Resource "*" is NOT sufficient --
-    # confirmed live (AccessDeniedException persisted even with Resource
-    # "*" granting the action). AWS's own example policies (see "Delegating
-    # permission set management and account assignment in AWS IAM Identity
-    # Center" security blog) always list the Instance, PermissionSet, and
-    # Account resource types explicitly, never as "*". Must do the same.
     resources = concat(
       [local.sso_instance_arn],
       ["${replace(local.sso_instance_arn, "instance/", "permissionSet/")}/*"],
