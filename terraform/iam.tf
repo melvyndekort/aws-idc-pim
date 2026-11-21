@@ -33,15 +33,21 @@ data "aws_iam_policy_document" "lambda_permissions" {
   statement {
     sid    = "ManageWorkloadAccountAssignments"
     effect = "Allow"
+    # Despite being called via the boto3 "sso-admin" client, every one of
+    # these operations is authorized under the "sso:" IAM action prefix,
+    # not "sso-admin:" -- confirmed live (AccessDeniedException naming
+    # "sso:ListInstances" explicitly) and in AWS's Service Authorization
+    # Reference for "AWS IAM Identity Center" (prefix sso). There is no
+    # separate "sso-admin" IAM action namespace for these operations.
     actions = [
-      "sso-admin:CreateAccountAssignment",
-      "sso-admin:DeleteAccountAssignment",
-      "sso-admin:DescribeAccountAssignmentCreationStatus",
-      "sso-admin:DescribeAccountAssignmentDeletionStatus",
-      "sso-admin:ListAccountAssignments",
-      "sso-admin:ListInstances",
-      "sso-admin:ListPermissionSets",
-      "sso-admin:DescribePermissionSet",
+      "sso:CreateAccountAssignment",
+      "sso:DeleteAccountAssignment",
+      "sso:DescribeAccountAssignmentCreationStatus",
+      "sso:DescribeAccountAssignmentDeletionStatus",
+      "sso:ListAccountAssignments",
+      "sso:ListInstances",
+      "sso:ListPermissionSets",
+      "sso:DescribePermissionSet",
     ]
     resources = ["*"]
   }
