@@ -3,7 +3,7 @@ name = "aws-idc-pim"
 version = "0.1.0"
 description = "Discord-driven just-in-time elevation for IAM Identity Center permission sets"
 authors = [{name = "Melvyn de Kort", email = "melvyn@mdekort.nl"}]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "pynacl>=1.6.0",
     "urllib3>=2.7.0",

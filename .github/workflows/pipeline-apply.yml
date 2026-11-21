@@ -25,13 +25,13 @@ jobs:
         with:
           version: "latest"
       - name: Set up Python
-        run: uv python install
+        run: uv python install 3.12
       - name: Install dependencies
         run: uv sync --all-extras
       - name: Build artifact
         run: |
           zip -r lambda.zip aws_idc_pim -x "aws_idc_pim/__pycache__/*"
-          uv pip install --target build_deps pynacl urllib3
+          uv pip install --target build_deps --python 3.12 pynacl urllib3
           cd build_deps && zip -r ../lambda.zip . -x "*.dist-info/*"
       - name: Archive lambda artifact
         uses: actions/upload-artifact@v7
