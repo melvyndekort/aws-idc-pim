@@ -50,7 +50,12 @@ Actual code is deployed via `make deploy` / CI pipeline using `aws lambda update
 - Providers: AWS `~> 6.19`
 - Secrets: KMS context `target=aws-idc-pim`, decrypted cross-account against management's
   `alias/generic` key (see `tf-aws`'s `management/variables.tf` `subaccount_secret_targets`)
-- `allowed_discord_users` / `target_accounts` / `default_duration_minutes`: `terraform/variables.tf`
+- `allowed_discord_users` / `default_duration_minutes`: `terraform/variables.tf`. No
+  Terraform-managed account-name map any more -- `/aws-elevate target:<name>` resolves
+  the account ID live against `organizations:ListAccounts` (`elevation.resolve_target_account_id`),
+  matched against the account's `Name` field. Any ACTIVE org account becomes a valid
+  target with zero code/Terraform change in this repo; the management account is still
+  the one hard exception, routed through `IdcPimRootElevationRole` regardless.
 
 ## Manual step not automatable here
 

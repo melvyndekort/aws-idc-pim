@@ -37,10 +37,6 @@ ROOT_ELEVATION_ROLE_ARN = os.environ["ROOT_ELEVATION_ROLE_ARN"]
 SCHEDULER_ROLE_ARN = os.environ["SCHEDULER_ROLE_ARN"]
 SCHEDULER_TARGET_LAMBDA_ARN = os.environ["SCHEDULER_TARGET_LAMBDA_ARN"]
 
-# name -> account id, Terraform-managed (terraform/variables.tf), so a new
-# workload account needs no code change here.
-TARGET_ACCOUNTS = json.loads(os.environ["TARGET_ACCOUNTS"])
-
 
 class ElevationError(Exception):
     """Raised for any user-facing failure in the elevate/revoke flow."""
@@ -103,11 +99,25 @@ def resolve_principal_id(email: str) -> tuple[str, str, str]:
 
 
 def resolve_target_account_id(target_name: str) -> str:
-    """Map a Discord command's `target` option to an AWS account ID."""
-    account_id = TARGET_ACCOUNTS.get(target_name)
+    """Map a Discord command's `target` option to an AWS account ID by
+    looking up the live AWS Organizations account list -- no Terraform-
+    managed map to keep in sync as subaccounts get added, renamed, or
+    moved. This account's delegated-administrator status (registered for
+    IAM Identity Center) already grants the read-only
+    organizations:ListAccounts permission AWS extends to any delegated-
+    admin account, regardless of which service it's delegated for."""
+    organizations = boto3.client("organizations")
+    paginator = organizations.get_paginator("list_accounts")
+    active_accounts = {}
+    for page in paginator.paginate():
+        for account in page["Accounts"]:
+            if account["Status"] == "ACTIVE":
+                active_accounts[account["Name"]] = account["Id"]
+    account_id = active_accounts.get(target_name)
     if account_id is None:
         raise ElevationError(
-            f"Unknown target '{target_name}'. Known: {', '.join(TARGET_ACCOUNTS)}"
+            f"Unknown target '{target_name}'. "
+            f"Known: {', '.join(sorted(active_accounts))}"
         )
     return account_id
 

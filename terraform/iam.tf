@@ -32,12 +32,20 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 data "aws_ssoadmin_instances" "this" {}
 
 locals {
-  sso_instance_arn     = tolist(data.aws_ssoadmin_instances.this.arns)[0]
-  workload_account_ids = [for name, id in var.target_accounts : id if name != "management"]
+  sso_instance_arn = tolist(data.aws_ssoadmin_instances.this.arns)[0]
 }
 
 data "aws_iam_policy_document" "lambda_permissions" {
   statement {
+    # Account resource scoped to a wildcard, not an enumerated per-account
+    # list: delegated administration already hard-blocks this identity
+    # policy from reaching the management account regardless of what this
+    # statement allows (AWS restricts management-account assignment
+    # changes to the management account itself, confirmed live -- see
+    # elevation.py's management-account-only ROOT_ELEVATION_ROLE_ARN path),
+    # so a wildcard here only ever resolves to workload accounts in
+    # practice. This is what lets a brand-new subaccount become a valid
+    # /aws-elevate target with zero Terraform change in this repo.
     sid    = "ManageWorkloadAccountAssignments"
     effect = "Allow"
     actions = [
@@ -49,11 +57,11 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "sso:ListPermissionSets",
       "sso:DescribePermissionSet",
     ]
-    resources = concat(
-      [local.sso_instance_arn],
-      ["${replace(local.sso_instance_arn, "instance/", "permissionSet/")}/*"],
-      [for id in local.workload_account_ids : "arn:aws:sso:::account/${id}"],
-    )
+    resources = [
+      local.sso_instance_arn,
+      "${replace(local.sso_instance_arn, "instance/", "permissionSet/")}/*",
+      "arn:aws:sso:::account/*",
+    ]
   }
 
   statement {
@@ -67,6 +75,20 @@ data "aws_iam_policy_document" "lambda_permissions" {
     sid       = "ResolveIdentityStorePrincipals"
     effect    = "Allow"
     actions   = ["identitystore:ListUsers"]
+    resources = ["*"]
+  }
+
+  # organizations:ListAccounts resolves a Discord `target` name to an
+  # account ID live (elevation.resolve_target_account_id) instead of a
+  # Terraform-managed map. No resource-level restriction exists for this
+  # action; the ability to call it at all is what matters, and it's
+  # already an org-level read granted to any delegated-administrator
+  # account (for any service), confirmed against AWS's own Organizations
+  # docs on delegated-administrator permissions.
+  statement {
+    sid       = "ResolveTargetAccounts"
+    effect    = "Allow"
+    actions   = ["organizations:ListAccounts"]
     resources = ["*"]
   }
 

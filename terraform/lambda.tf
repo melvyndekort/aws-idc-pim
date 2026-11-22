@@ -38,7 +38,6 @@ resource "aws_lambda_function" "aws_idc_pim" {
       # account id + region + the function_name set two lines above, so the
       # literal is exact, not a guess.
       SCHEDULER_TARGET_LAMBDA_ARN = "arn:aws:lambda:eu-west-1:397379012163:function:aws-idc-pim"
-      TARGET_ACCOUNTS             = jsonencode(var.target_accounts)
       ALLOWED_DISCORD_USERS       = jsonencode(var.allowed_discord_users)
       DEFAULT_DURATION_MINUTES    = tostring(var.default_duration_minutes)
       DISCORD_PUBLIC_KEY          = local.secrets.discord_public_key
