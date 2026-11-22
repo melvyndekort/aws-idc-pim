@@ -10,16 +10,6 @@ variable "root_elevation_role_arn" {
   default     = "arn:aws:iam::075673041815:role/IdcPimRootElevationRole"
 }
 
-variable "target_accounts" {
-  description = "Discord command `target` name -> AWS account ID. A new workload account needs no code change, only an entry here."
-  type        = map(string)
-  default = {
-    management      = "075673041815"
-    hermes-agent    = "520519513359"
-    network-monitor = "844347863910"
-  }
-}
-
 variable "default_duration_minutes" {
   description = "Elevation duration when /elevate is called without an explicit duration"
   type        = number

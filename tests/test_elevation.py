@@ -15,13 +15,46 @@ import pytest
 from aws_idc_pim import elevation
 
 
-def test_resolve_target_account_id_known():
+def _organizations_client(names_to_ids, inactive=None):
+    """A mock organizations client's list_accounts paginator, wired to
+    resolve_target_account_id's expectations."""
+    accounts = [
+        {"Name": name, "Id": account_id, "Status": "ACTIVE"}
+        for name, account_id in names_to_ids.items()
+    ]
+    for name in inactive or []:
+        accounts.append({"Name": name, "Id": "000000000000", "Status": "SUSPENDED"})
+    mock_organizations = MagicMock()
+    mock_paginator = MagicMock()
+    mock_paginator.paginate.return_value = [{"Accounts": accounts}]
+    mock_organizations.get_paginator.return_value = mock_paginator
+    return mock_organizations
+
+
+@patch("aws_idc_pim.elevation.boto3")
+def test_resolve_target_account_id_known(mock_boto3):
+    mock_boto3.client.return_value = _organizations_client(
+        {"management": "075673041815"}
+    )
     assert elevation.resolve_target_account_id("management") == "075673041815"
 
 
-def test_resolve_target_account_id_unknown_raises():
+@patch("aws_idc_pim.elevation.boto3")
+def test_resolve_target_account_id_unknown_raises(mock_boto3):
+    mock_boto3.client.return_value = _organizations_client(
+        {"management": "075673041815"}
+    )
     with pytest.raises(elevation.ElevationError, match="Unknown target"):
         elevation.resolve_target_account_id("not-a-real-account")
+
+
+@patch("aws_idc_pim.elevation.boto3")
+def test_resolve_target_account_id_ignores_inactive_accounts(mock_boto3):
+    mock_boto3.client.return_value = _organizations_client(
+        {"management": "075673041815"}, inactive=["closed-account"]
+    )
+    with pytest.raises(elevation.ElevationError, match="Unknown target"):
+        elevation.resolve_target_account_id("closed-account")
 
 
 def test_schedule_name_is_stable_and_safe():
@@ -133,10 +166,22 @@ def _mock_clients(*, existing_assignments=None):
     mock_scheduler.exceptions.ResourceNotFoundException = _ResourceNotFoundException
     mock_scheduler.delete_schedule.side_effect = _ResourceNotFoundException
 
+    mock_organizations = MagicMock()
+    mock_org_paginator = MagicMock()
+    mock_org_paginator.paginate.return_value = [
+        {
+            "Accounts": [
+                {"Name": "hermes-agent", "Id": "520519513359", "Status": "ACTIVE"}
+            ]
+        }
+    ]
+    mock_organizations.get_paginator.return_value = mock_org_paginator
+
     clients = {
         "sso-admin": mock_sso_admin,
         "identitystore": mock_identitystore,
         "scheduler": mock_scheduler,
+        "organizations": mock_organizations,
     }
     return clients, mock_sso_admin, mock_scheduler
 
